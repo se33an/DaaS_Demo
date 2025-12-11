@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaaS 資料品質管理 v71 (Dept & Unified Flow)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles/data-quality.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header class="px-6 shadow-sm flex items-center justify-between h-16 flex-shrink-0 bg-white">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-1.5 rounded font-bold tracking-wider text-sm">DaaS</div>
+                <span class="font-bold text-gray-800 text-lg tracking-tight">數據品質管理平台</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+                    PM</div>
+            </div>
+        </header>
+
+        <div class="main-area">
+
+            <div class="filter-section">
+                <div class="flex justify-between items-center cursor-pointer mb-6" onclick="toggleFilterPanel()">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-search text-blue-600"></i> 搜尋條件
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="px-8 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 shadow-sm transition"
+                            onclick="event.stopPropagation(); executeSearch();">
+                            搜尋
+                        </button>
+                        <i class="fas fa-chevron-up text-gray-500 transform transition-transform"
+                            id="filter-panel-icon"></i>
+                    </div>
+                </div>
+
+                <div id="filter-panel-content" class="block">
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">關鍵字搜尋</label>
+                        <input type="text" placeholder="輸入資料表名稱、欄位名稱..."
+                            class="w-full border border-gray-300 rounded p-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <span>數據主題 (Data Domain)</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">客戶主題</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">銷售主題</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">財務主題</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <span>權責部門 (Responsible Dept)</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">資訊部 (IT)</label><label
+                                        class="flex items-center"><input type="checkbox" class="mr-2 h-4 w-4">業務部
+                                        (Sales)</label><label class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">人資部 (HR)</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">財務部 (Finance)</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <span>資料類別 (Data Class)</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">ID</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Code</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">Date</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Amount</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)">
+                                <span>敏感性標記 (Sensitive Mark)</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">PII</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Financial</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Confidential</label></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="empty-state"
+                class="flex flex-col items-center justify-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300 py-24">
+                <i class="fas fa-search text-6xl mb-4 text-gray-200"></i>
+                <p class="text-lg font-medium">請輸入條件並點擊「搜尋」以檢視資產列表</p>
+            </div>
+
+            <div id="results-area" class="results-container hidden animate-fade-in">
+                <div class="results-header">
+                    <h3 class="font-bold text-gray-800 text-lg">搜尋結果 <span
+                            class="text-sm font-normal text-gray-500 ml-2 bg-gray-100 px-3 py-1 rounded-full">共 <span
+                                id="total-count">0</span> 欄位</span></h3>
+                    <button id="btn-apply-rules"
+                        class="px-5 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center"
+                        disabled onclick="openWizard()">
+                        <i class="fas fa-magic mr-2"></i>套用規則 (<span id="selected-count">0</span>)
+                    </button>
+                </div>
+
+                <div class="results-toolbar">
+                    <div class="text-sm font-bold text-gray-700 mr-2"><i
+                            class="fas fa-filter text-blue-600 mr-1"></i>二次篩選:</div>
+
+                    <div class="flex items-center gap-2 bg-white border rounded px-3 py-1 text-sm">
+                        <span class="text-gray-500">規則</span>
+                        <select id="rule-filter-select"
+                            class="outline-none bg-transparent text-gray-700 font-medium cursor-pointer"
+                            onchange="applySecondaryFilter()">
+                            <option value="all">全部顯示</option>
+                            <option value="has_rule">有配置規則</option>
+                            <option value="no_rule">未配置規則</option>
+                            <option disabled>──────────</option>
+                            <option value="completeness">1. 資料完備性</option>
+                            <option value="consistency">2. 資料一致性</option>
+                            <option value="accuracy_range">3. 資料準確性 - 數值</option>
+                            <option value="accuracy_date">4. 資料準確性 - 日期</option>
+                            <option value="integrity">5. 資料健全性</option>
+                            <option value="uniqueness">6. 資料獨特性</option>
+                            <option value="outlier">7. 資料規範</option>
+                            <option value="custom_sql">8. 自訂 SQL 邏輯</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-white border rounded px-3 py-1 text-sm">
+                        <span class="text-gray-500">任務</span>
+                        <select class="outline-none bg-transparent text-gray-700 font-medium cursor-pointer"
+                            onchange="applySecondaryFilter()">
+                            <option value="all">全部顯示</option>
+                            <option value="has_task">有配置任務</option>
+                            <option value="no_task">未配置任務</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <colgroup>
+                            <col style="width: 50px;">
+                            <col style="width: 220px;">
+                            <col style="width: 100px;">
+                            <col style="width: 120px;">
+                            <col style="width: 90px;">
+                            <col style="width: 90px;">
+                            <col style="width: 240px;">
+                            <col style="width: 110px;">
+                            <col style="width: 150px;">
+                            <col style="width: 130px;">
+                            <col style="width: 150px;">
+                            <col style="width: 110px;">
+                            <col style="width: 130px;">
+                            <col style="width: 130px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="text-center no-sort"><input type="checkbox" id="check-all"
+                                        class="rounded text-blue-600 w-4 h-4"></th>
+                                <th onclick="sortTable('name')">欄位名稱 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('type')">Type <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('dept')">權責部門 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('class')">Class <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('sensitive')">敏感性 <i class="fas fa-sort sort-icon"></i></th>
+                                <th class="border-l border-gray-200 no-sort">規則名稱</th>
+                                <th class="text-center no-sort">Base Line</th>
+                                <th class="text-center bg-blue-50 text-blue-800 no-sort">通過標準</th>
+                                <th class="text-center border-l border-gray-200" onclick="sortTable('status')">剖析狀態 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-right no-sort">掃描筆數</th>
+                                <th class="text-center" onclick="sortTable('task')">所屬任務 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-center border-l border-gray-200" onclick="sortTable('ruleTime')">規則更新 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-center" onclick="sortTable('profileTime')">剖析更新 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <div class="text-gray-600">顯示 1 到 10 筆，共 <span id="pag-total">0</span> 筆</div>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1 border rounded bg-white text-gray-400 cursor-not-allowed"
+                            disabled>上一頁</button>
+                        <button
+                            class="px-3 py-1 border rounded bg-blue-50 text-blue-600 font-bold border-blue-200">1</button>
+                        <button class="px-3 py-1 border rounded bg-white hover:bg-gray-50">2</button>
+                        <span class="px-2 py-1 text-gray-400">...</span>
+                        <button class="px-3 py-1 border rounded bg-white hover:bg-gray-50">下一頁</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="wizard-modal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl flex flex-col h-[85vh]">
+            <div class="px-8 py-5 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">套用規則精靈</h3><button onclick="closeWizard()"
+                    class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="px-10 py-6">
+                <div class="flex items-center justify-between relative">
+                    <div class="flex flex-col items-center step-item step-active" data-step="1">
+                        <div class="step-indicator">1</div><span class="text-xs mt-1 font-bold">規則參數</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="flex flex-col items-center step-item step-pending" data-step="2">
+                        <div class="step-indicator">2</div><span class="text-xs mt-1 font-bold">執行設定</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8 bg-gray-50">
+                <div id="step-1" class="wizard-step">
+                    <h4 class="text-lg font-bold mb-4">Step 1: 選擇規則並設定參數</h4>
+                    <div id="rules-list-container" class="space-y-4"></div>
+                </div>
+                <div id="step-2" class="wizard-step hidden">
+                    <h4 class="text-lg font-bold mb-4">Step 2: 執行設定</h4>
+                    <div class="bg-blue-50 p-6 rounded border border-blue-200 mb-8">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold mb-1">執行範圍 (Scope)</label>
+                                <div class="flex gap-2"><select id="w-scope"
+                                        class="border rounded px-3 py-2 w-1/2 text-sm">
+                                        <option value="full">全量檢查</option>
+                                        <option value="percent">抽樣 %</option>
+                                        <option value="rows">抽樣 Rows</option>
+                                    </select><input type="number" id="w-scope-val"
+                                        class="border rounded px-3 py-2 w-1/2 text-sm hidden" placeholder="數值"></div>
+                            </div>
+                            <div><label class="block text-xs font-bold mb-1">資料過濾 (Where)</label><input type="text"
+                                    id="w-where" class="border rounded px-3 py-2 w-full text-sm"
+                                    placeholder="STATUS='A'"></div>
+                        </div>
+                    </div>
+                    <div class="text-center py-4 text-gray-600">
+                        <div id="selected-rules-summary"
+                            class="text-left bg-white border rounded p-4 mb-4 max-h-40 overflow-y-auto text-sm shadow-inner hidden">
+                        </div>
+                        <p class="text-sm">點擊執行後，系統將於背景進行掃描，完成後請設定標準。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-4 border-t flex justify-between"><button id="btn-wiz-prev"
+                    class="px-6 py-2 border rounded" disabled>上一步</button>
+                <div class="flex gap-2"><button onclick="closeWizard()"
+                        class="px-6 py-2 text-gray-500">取消</button><button id="btn-wiz-next"
+                        class="px-6 py-2 bg-blue-600 text-white rounded">下一步</button><button id="btn-wiz-run"
+                        class="hidden px-6 py-2 bg-green-600 text-white rounded font-bold">執行資料剖析</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal-overlay">
+        <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 id="detail-title" class="font-bold text-lg">規則詳情</h3><span id="badge-edit"
+                    class="hidden text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-200 font-bold">編輯模式</span>
+            </div>
+
+            <div id="view-mode-content" class="space-y-3 mb-4"></div>
+
+            <div id="edit-mode-content" class="hidden flex flex-col gap-4 mb-4">
+                <div id="edit-inputs" class="bg-gray-50 p-4 rounded border border-gray-200"></div>
+                <div class="text-xs text-red-500 flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i>
+                    修改參數需重新執行剖析</div>
+                <button id="btn-rerun"
+                    class="w-full py-2 bg-purple-100 text-purple-700 border border-purple-200 rounded font-bold transition hover:bg-purple-200"
+                    onclick="executeInEditMode()"><i class="fas fa-sync-alt mr-1"></i> 執行重算 (背景)</button>
+
+                <div id="post-run-area" class="hidden bg-blue-50 p-3 rounded border border-blue-200 animate-fade-in">
+                    <div class="flex justify-between items-center border-b border-blue-200 pb-1 mb-2">
+                        <h5 class="text-xs font-bold text-blue-800">品質標準設定</h5>
+                        <div class="group relative cursor-help">
+                            <i class="fas fa-info-circle text-blue-500 text-xs"></i>
+                            <div
+                                class="absolute right-0 bottom-full mb-1 hidden group-hover:block w-48 bg-gray-800 text-white text-xs p-2 rounded z-10">
+                                通過標準 = 基準線 + 容忍值
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <div><label class="text-xs text-gray-500">基準線</label><input id="e-base"
+                                class="w-full border px-1 bg-gray-100 text-gray-500 text-sm" readonly></div>
+                        <div><label class="text-xs text-gray-500">容忍值</label><input id="e-tol" type="number"
+                                class="w-full border px-1 text-center text-sm" value="0"></div>
+                        <div><label class="text-xs text-blue-700 font-bold">通過標準</label><input id="e-crit"
+                                class="w-full border bg-blue-100 px-1 text-blue-700 font-bold text-sm" readonly></div>
+                    </div>
+                    <div class="text-[10px] text-gray-500 text-center bg-blue-100/50 rounded py-1">
+                        <span class="font-mono">基準線 + 容忍值 = 通過標準</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mt-6 pt-4 border-t">
+                <button id="btn-del" class="hidden text-red-500 hover:bg-red-50 px-3 py-2 rounded text-sm"
+                    onclick="deleteRule()">移除規則</button>
+                <div class="flex gap-2 ml-auto">
+                    <button id="btn-close" onclick="closeDetailModal()"
+                        class="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">關閉</button>
+                    <button id="btn-edit" onclick="enableEdit()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">編輯參數</button>
+                    <button id="btn-save" onclick="saveEditAndRun()"
+                        class="hidden px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-bold">儲存設定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data-quality.js"></script>
+</body>
+
+</html>

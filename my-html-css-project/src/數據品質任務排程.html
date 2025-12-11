@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數據品質任務排程 - V5.0 (最終完整版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles/task-schedule.css">
+</head>
+
+<body>
+
+    <div class="app-layout">
+        <header class="header bg-white border-b border-gray-200 flex items-center justify-between px-8 py-3 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-1.5 rounded">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold text-gray-800">Data Quality Center</span>
+            </div>
+            <div class="flex items-center space-x-6 text-sm font-medium text-gray-500">
+                <a href="#" class="hover:text-blue-600">數據資產總覽</a>
+                <a href="#" class="text-blue-600 border-b-2 border-blue-600 pb-4 -mb-4">任務排程管理</a>
+                <a href="#" class="hover:text-blue-600">規則配置庫</a>
+                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">U
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+
+            <div id="task-list-view" class="max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">任務排程管理</h1>
+                        <p class="text-sm text-gray-500 mt-1">監控與管理所有自動化品質檢核任務。</p>
+                    </div>
+                    <button onclick="showTaskEditView(false)"
+                        class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors">
+                        + 新增任務
+                    </button>
+                </div>
+
+                <div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                    狀態</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    任務名稱</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    排程設定</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    執行結果</th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" id="t1"
+                                            class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300"
+                                            checked />
+                                        <label for="t1"
+                                            class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="#" onclick="showTaskDetailView('每日客戶資料檢核')"
+                                        class="text-sm font-bold text-blue-600 hover:text-blue-900 hover:underline">每日客戶資料檢核</a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">每日 13:00</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 w-fit">成功</span>
+                                        <span class="text-xs text-gray-400 mt-1">2025-05-20 13:00</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <button onclick="showHistoryView('每日客戶資料檢核')"
+                                        class="text-blue-600 hover:text-blue-800 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors">執行紀錄</button>
+                                    <button onclick="alert('已觸發立即執行！')"
+                                        class="text-gray-600 hover:text-gray-800 border border-gray-300 bg-white hover:bg-gray-50 px-3 py-1.5 rounded transition-colors">立即執行</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="relative inline-block w-10 align-middle select-none">
+                                        <input type="checkbox" id="t2"
+                                            class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300" />
+                                        <label for="t2"
+                                            class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="#" onclick="showTaskDetailView('每月財務報表規則')"
+                                        class="text-sm font-bold text-blue-600 hover:text-blue-900 hover:underline">每月財務報表規則</a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">每月 1 號 04:00</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 w-fit">失敗</span>
+                                        <span class="text-xs text-gray-400 mt-1">2025-05-01 04:00</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    <button onclick="showHistoryView('每月財務報表規則')"
+                                        class="text-blue-600 hover:text-blue-800 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors">執行紀錄</button>
+                                    <button onclick="alert('已觸發立即執行！')"
+                                        class="text-gray-600 hover:text-gray-800 border border-gray-300 bg-white hover:bg-gray-50 px-3 py-1.5 rounded transition-colors">立即執行</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="task-detail-view" class="hidden max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="showTaskListView()"
+                            class="text-gray-500 hover:text-gray-700 flex items-center text-sm font-medium">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            返回清單
+                        </button>
+                        <span class="text-gray-300">|</span>
+                        <h1 id="detail-title" class="text-2xl font-bold text-gray-900">任務詳細資料</h1>
+                    </div>
+                    <button onclick="showTaskEditView(true, document.getElementById('detail-title').innerText)"
+                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                            </path>
+                        </svg>
+                        編輯任務
+                    </button>
+                </div>
+
+                <div class="bg-white shadow rounded-lg p-8 border border-gray-200 space-y-8">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">基本資訊</h3>
+                        <div class="grid grid-cols-2 gap-6 text-sm">
+                            <div><label class="text-gray-500 block">任務名稱</label><span
+                                    class="text-gray-900 font-medium text-lg block mt-1">每日客戶資料檢核</span></div>
+                            <div><label class="text-gray-500 block">排程設定</label><span
+                                    class="text-gray-900 font-medium block mt-1">每日 (Daily) - 13:00</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">包含資產清單</h3>
+                        <div id="detail-assets-container" class="space-y-3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-view" class="hidden max-w-7xl mx-auto">
+                <div class="flex items-center mb-6 space-x-2">
+                    <button onclick="showTaskListView()"
+                        class="text-gray-500 hover:text-gray-700 flex items-center text-sm font-medium">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                        返回清單
+                    </button>
+                    <span class="text-gray-300">|</span>
+                    <h1 id="history-title" class="text-2xl font-bold text-gray-900">執行紀錄</h1>
+                </div>
+
+                <div class="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 w-8"></th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">日期</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">開始時間</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">結束時間</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">執行狀態</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">執行結果</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Error Log
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="execution-history-list" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="task-edit-view" class="hidden max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 id="task-edit-title" class="text-2xl font-bold text-gray-900">新增任務</h1>
+                    <button onclick="showTaskListView()"
+                        class="text-gray-600 hover:text-gray-900 border border-gray-300 px-4 py-2 rounded bg-white text-sm font-medium">取消</button>
+                </div>
+
+                <div class="bg-white p-8 border border-gray-200 rounded-lg shadow-sm space-y-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><span
+                                class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded mr-2">STEP 1</span>
+                            基本資訊</h3>
+                        <div class="grid grid-cols-1 gap-6">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">任務名稱</label><input
+                                    type="text" id="task-name-input"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><span
+                                class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded mr-2">STEP 2</span>
+                            選擇檢核資產與設定</h3>
+                        <div class="border border-gray-300 rounded-md p-5 bg-gray-50">
+                            <div class="flex justify-between items-center mb-4">
+                                <p class="text-sm text-gray-500">請選擇資產，並可針對「整個資料表」統一設定檢核範圍。</p>
+                                <button onclick="openAssetSelectModal()"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">+
+                                    選擇資產</button>
+                            </div>
+                            <div id="selected-assets-container" class="space-y-3">
+                                <div
+                                    class="p-8 text-center text-gray-400 text-sm italic border border-dashed border-gray-300 rounded-lg bg-white">
+                                    尚未選擇任何資產...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><span
+                                class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded mr-2">STEP 3</span>
+                            排程設定</h3>
+                        <div class="bg-white p-6 rounded border border-gray-200 space-y-6">
+                            <div class="flex space-x-6 border-b border-gray-100 pb-4">
+                                <label class="flex items-center cursor-pointer"><input type="radio" name="schedule"
+                                        value="daily" checked class="mr-2">每日</label>
+                                <label class="flex items-center cursor-pointer"><input type="radio" name="schedule"
+                                        value="weekly" class="mr-2">每週</label>
+                                <label class="flex items-center cursor-pointer"><input type="radio" name="schedule"
+                                        value="monthly" class="mr-2">每月</label>
+                            </div>
+                            <div id="schedule-options-container" class="text-sm text-gray-700">
+                                <div id="opt-daily" class="schedule-sub-option active space-y-3">
+                                    <div class="flex items-center"><label class="w-24 font-medium">執行時間:</label><input
+                                            type="time" value="09:00" class="border rounded p-1"></div>
+                                </div>
+                                <div id="opt-weekly" class="schedule-sub-option space-y-4">
+                                    <div>
+                                        <label class="block mb-2 font-medium">執行週期 (可多選):</label>
+                                        <div class="flex flex-wrap gap-4">
+                                            <label><input type="checkbox" class="mr-2" checked>週一</label><label><input
+                                                    type="checkbox" class="mr-2">週二</label><label><input type="checkbox"
+                                                    class="mr-2">週三</label><label><input type="checkbox"
+                                                    class="mr-2">週四</label><label><input type="checkbox"
+                                                    class="mr-2">週五</label><label><input type="checkbox"
+                                                    class="mr-2">週六</label><label><input type="checkbox"
+                                                    class="mr-2">週日</label>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center"><label class="w-24 font-medium">執行時間:</label><input
+                                            type="time" value="09:00" class="border rounded p-1"></div>
+                                </div>
+                                <div id="opt-monthly" class="schedule-sub-option space-y-4">
+                                    <div class="flex items-center space-x-4 mb-2">
+                                        <label><input type="radio" name="monthly-mode" value="date" checked class="mr-2"
+                                                onclick="toggleMonthlyMode('date')">依日期</label>
+                                        <label><input type="radio" name="monthly-mode" value="pattern" class="mr-2"
+                                                onclick="toggleMonthlyMode('pattern')">依週期</label>
+                                    </div>
+                                    <div id="monthly-date-input"
+                                        class="flex items-center space-x-2 bg-gray-50 p-3 rounded border border-gray-200">
+                                        <span>每月</span><input type="number" min="1" max="31" value="1"
+                                            class="w-20 border rounded text-center"><span>號</span>
+                                    </div>
+                                    <div id="monthly-pattern-input"
+                                        class="hidden flex items-center space-x-2 bg-gray-50 p-3 rounded border border-gray-200">
+                                        <span>每月</span><select class="border rounded p-1">
+                                            <option>第一個</option>
+                                            <option>第二個</option>
+                                            <option>最後一個</option>
+                                        </select><select class="border rounded p-1">
+                                            <option>週一</option>
+                                            <option>週五</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center pt-2"><label
+                                            class="w-24 font-medium">執行時間:</label><input type="time" value="09:00"
+                                            class="border rounded p-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-6 border-t border-gray-200 space-x-3">
+                        <button onclick="showTaskListView()"
+                            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded">取消</button>
+                        <button onclick="alert('儲存成功'); showTaskListView()"
+                            class="bg-blue-600 text-white px-6 py-2 rounded">儲存任務</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="asset-select-modal" class="modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-900">選擇資產</h3>
+                <button onclick="closeAssetSelectModal()" class="text-gray-400 hover:text-gray-500"><svg class="h-6 w-6"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg></button>
+            </div>
+            <div class="flex flex-1 overflow-hidden">
+                <div
+                    class="w-64 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto custom-scroll text-sm flex-shrink-0">
+                    <div class="mb-4"><label class="block font-semibold text-gray-700 mb-1">關鍵字搜尋</label><input
+                            type="text" placeholder="輸入..." class="w-full border rounded p-1.5"></div>
+                    <div class="filter-section">
+                        <h4 class="font-semibold text-gray-700 mb-2">數據主題 (Data Domain)</h4>
+                        <div class="space-y-1.5"><label class="flex items-center"><input type="checkbox" class="mr-2"
+                                    checked> 客戶</label><label class="flex items-center"><input type="checkbox"
+                                    class="mr-2" checked> 銷售</label></div>
+                    </div>
+                    <div class="filter-section">
+                        <h4 class="font-semibold text-gray-700 mb-2">權責部門 (Responsible Dept)</h4>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center"><input type="checkbox" class="mr-2"> 資訊部 (IT)</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-2"> 業務部 (Sales)</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-2"> 人資部 (HR)</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-2"> 財務部 (Finance)</label>
+                        </div>
+                    </div>
+                    <div class="filter-section">
+                        <h4 class="font-semibold text-gray-700 mb-2">資料類別 (Data Class)</h4>
+                        <div class="space-y-1.5"><label class="flex items-center"><input type="checkbox" class="mr-2">
+                                PII</label><label class="flex items-center"><input type="checkbox" class="mr-2">
+                                ID</label></div>
+                    </div>
+                    <div class="filter-section">
+                        <h4 class="font-semibold text-gray-700 mb-2">敏感性標記 (Sensitive Mark)</h4>
+                        <div class="space-y-1.5"><label class="flex items-center"><input type="checkbox" class="mr-2">
+                                機密</label><label class="flex items-center"><input type="checkbox" class="mr-2">
+                                一般</label></div>
+                    </div>
+                    <div class="mt-6"><button onclick="applyAssetFilters()"
+                            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">套用篩選</button></div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 custom-scroll bg-white relative">
+                    <div id="modal-empty-state"
+                        class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-white z-10">
+                        <p class="text-lg font-medium">請設定左側篩選條件</p>
+                    </div>
+                    <div id="modal-results-container" class="hidden">
+                        <div class="flex items-center justify-between mb-3 pb-3 border-b border-gray-200"><label
+                                class="flex items-center font-semibold text-gray-700 cursor-pointer"><input
+                                    type="checkbox" id="cb-master" class="w-5 h-5 mr-2" onclick="toggleAllAssets(this)">
+                                全選所有</label><span class="text-sm text-gray-500">共 <span id="total-asset-count">0</span>
+                                個欄位</span></div>
+                        <div id="asset-accordion-list" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button onclick="closeAssetSelectModal()" class="px-4 py-2 bg-white border rounded mr-2">取消</button>
+                <button onclick="confirmAssetSelection()" class="px-4 py-2 bg-blue-600 text-white rounded">確認加入</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="column-config-modal" class="modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl w-[600px] overflow-hidden transform transition-all">
+            <div class="px-6 py-4 border-b border-gray-200 bg-blue-50 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold text-blue-900">檢核參數設定</h3>
+                    <p id="config-modal-subtitle" class="text-xs text-blue-600 mt-0.5">...</p>
+                </div>
+                <button onclick="closeConfigModal()" class="text-blue-400 hover:text-blue-600"><svg class="h-5 w-5"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">檢核範圍 (Scope)</label>
+                    <div class="flex gap-4 mb-3">
+                        <label class="inline-flex items-center cursor-pointer"><input type="radio" name="config-scope"
+                                value="full" checked class="text-blue-600 focus:ring-blue-500"
+                                onchange="toggleSamplingInputs()"><span class="ml-2 text-sm">全量 (Full
+                                Scan)</span></label>
+                        <label class="inline-flex items-center cursor-pointer"><input type="radio" name="config-scope"
+                                value="sample" class="text-blue-600 focus:ring-blue-500"
+                                onchange="toggleSamplingInputs()"><span class="ml-2 text-sm">抽樣
+                                (Sampling)</span></label>
+                    </div>
+                    <div id="sampling-options"
+                        class="hidden bg-gray-50 p-4 rounded border border-gray-200 grid grid-cols-2 gap-4">
+                        <div><label class="block text-xs font-medium text-gray-600 mb-1">抽樣方式</label><select
+                                id="sample-type"
+                                class="w-full text-sm border-gray-300 rounded-md shadow-sm p-2 bg-white">
+                                <option value="rows">筆數 (Rows)</option>
+                                <option value="percent">百分比 (%)</option>
+                            </select></div>
+                        <div><label class="block text-xs font-medium text-gray-600 mb-1">數值</label><input type="number"
+                                id="sample-value" class="w-full text-sm border-gray-300 rounded-md shadow-sm p-2"
+                                placeholder="1000"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+                        資料過濾條件 (SQL Where Clause)
+                        <button onclick="toggleSqlHelp()"
+                            class="ml-2 text-blue-500 hover:text-blue-700 focus:outline-none" title="查看可用參數">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </button>
+                    </label>
+                    <div id="sql-help-box"
+                        class="sql-helper-box bg-blue-50 border border-blue-200 rounded-md p-3 mb-2 text-xs text-blue-800">
+                        <p class="font-bold mb-1">可用動態參數範例：</p>
+                        <ul class="list-disc list-inside space-y-0.5 text-gray-600">
+                            <li><code>${BIZ_DATE}</code> - 業務日期 (YYYY-MM-DD)</li>
+                            <li><code>NOW()</code> - 當前執行時間</li>
+                            <li><code>CURDATE()</code> - 當前日期</li>
+                            <li><code>DATE_SUB(NOW(), INTERVAL 1 DAY)</code> - 過去 24 小時</li>
+                        </ul>
+                    </div>
+                    <textarea id="config-sql-where" rows="3"
+                        class="w-full border-gray-300 rounded-md shadow-sm text-sm p-3 font-mono bg-gray-50 focus:bg-white transition-colors"
+                        placeholder="例如: create_date >= ${BIZ_DATE}"></textarea>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end space-x-2">
+                <button onclick="closeConfigModal()"
+                    class="px-4 py-2 border border-gray-300 rounded bg-white text-sm font-medium hover:bg-gray-50 text-gray-700">取消</button>
+                <button onclick="saveConfig()"
+                    class="px-6 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 shadow-sm">儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900" id="chart-modal-title">趨勢圖</h3>
+                    <p class="text-sm text-gray-500 mt-1">執行結果 vs Baseline vs 通過標準</p>
+                </div>
+                <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-500"><svg class="h-6 w-6"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-6 h-[450px] relative w-full">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/task-schedule.js"></script>
+</body>
+
+</html>

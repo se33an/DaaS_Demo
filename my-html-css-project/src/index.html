@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數據資產總覽平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .tab-button.active {
+            @apply bg-blue-600 text-white shadow-md;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Table specific styles */
+        .table-container {
+            overflow-x: auto;
+            white-space: nowrap; /* Prevent wrapping for fixed columns */
+        }
+        .table-fixed-header th {
+            position: sticky;
+            top: 0;
+            background-color: #f8fafc; /* Tailwind gray-50 */
+            z-index: 10;
+        }
+        .fixed-column-left {
+            position: sticky;
+            left: 0;
+            background-color: #ffffff; /* Ensure it stays white on scroll */
+            z-index: 20;
+            border-right: 1px solid #e2e8f0; /* Add a subtle separator */
+            width: 280px; /* Adjust fixed column width to accommodate combined info */
+            max-width: 280px;
+            min-width: 280px;
+        }
+        .fixed-column-left-header {
+            position: sticky;
+            left: 0;
+            background-color: #f8fafc; /* Tailwind gray-50 */
+            z-index: 21;
+            border-right: 1px solid #e2e8f0; /* Add a subtle separator */
+            width: 280px; /* Adjust fixed column width */
+            max-width: 280px;
+            min-width: 280px;
+        }
+        /* Style for visual grouping */
+        .group-header-basic { background-color: #e0f2fe; } /* light blue */
+        .group-header-business { background-color: #d1fae5; } /* light emerald */
+        .group-header-quality { background-color: #fff7ed; } /* light orange */
+        .group-header-owner { background-color: #fee2e2; } /* light red */
+
+        .group-cell-basic { background-color: #f0f9ff; } /* blue-50 */
+        .group-cell-business { background-color: #f0fdf4; } /* emerald-50 */
+        .group-cell-quality { background-color: #fffbeb; } /* amber-50 */
+        .group-cell-owner { background-color: #fef2f2; } /* red-50 */
+
+        /* Custom tooltip styles */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 280px; /* Slightly wider for more content */
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 10px;
+            position: absolute;
+            z-index: 30;
+            bottom: 100%; /* Position above the text */
+            left: 50%;
+            transform: translateX(-50%); /* Center the tooltip */
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: normal;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 0.875rem; /* smaller font for tooltip */
+        }
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .truncate-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 250px; /* Adjust max-width for truncated text within combined cell */
+            display: block; /* Ensure it takes full width for truncation */
+        }
+
+        /* DQ_SCORE progress bar like */
+        .dq-score-bar-container {
+            width: 100%;
+            background-color: #e5e7eb; /* gray-200 */
+            border-radius: 9999px; /* full rounded */
+            overflow: hidden;
+            height: 1rem; /* 16px */
+        }
+        .dq-score-bar {
+            height: 100%;
+            border-radius: 9999px; /* full rounded */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+        }
+        .filter-button.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+        .filter-button:not(.active) {
+            background-color: #e0e7ff; /* indigo-100 */
+            color: #4f46e5; /* indigo-700 */
+        }
+        /* Card for DQ Score Dashboard */
+        .quality-card {
+            @apply bg-white rounded-lg shadow-md p-6 text-center transition duration-300 ease-in-out hover:shadow-lg;
+        }
+        .quality-card.high { @apply border-t-4 border-green-500; }
+        .quality-card.medium { @apply border-t-4 border-yellow-500; }
+        .quality-card.low { @apply border-t-4 border-red-500; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="container mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">數據資產總覽平台</h1>
+
+        <!-- Page Navigation Tabs -->
+        <div class="flex justify-center mb-8 border-b border-gray-200">
+            <button class="tab-button px-6 py-3 text-lg font-medium text-gray-600 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 transition duration-150 ease-in-out active" data-tab="data-domain">1. 依數據主題分類</button>
+            <button class="tab-button px-6 py-3 text-lg font-medium text-gray-600 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 transition duration-150 ease-in-out" data-tab="sensitivity-tag">2. 依敏感性標籤分類</button>
+            <button class="tab-button px-6 py-3 text-lg font-medium text-gray-600 border-b-2 border-transparent hover:border-blue-500 hover:text-blue-600 transition duration-150 ease-in-out" data-tab="data-quality-score">3. 依資料品質分數分類</button>
+        </div>
+
+        <!-- Page 1: 依數據主題分類 -->
+        <div id="data-domain" class="tab-content active">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">1. 依數據主題分類瀏覽</h2>
+
+            <!-- Filter Section for Data Domain -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-inner">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">篩選條件</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Data Domain Filter -->
+                    <div>
+                        <label for="data-domain-filter" class="block text-sm font-medium text-gray-700 mb-1">數據主題</label>
+                        <select id="data-domain-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="all">全部</option>
+                            <option value="客戶資料">客戶資料</option>
+                            <option value="產品管理">產品管理</option>
+                            <option value="銷售分析">銷售分析</option>
+                            <option value="行銷活動">行銷活動</option>
+                        </select>
+                    </div>
+
+                    <!-- DQ Score Filter (Optional for this page) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">品質分數</label>
+                        <div class="mt-1 flex space-x-2">
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="90" data-max="100">高 (>=90)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="70" data-max="89">中 (70-89)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="0" data-max="69">低 (&lt;70)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm active" data-min="0" data-max="100">全部</button>
+                        </div>
+                    </div>
+
+                    <!-- Sensitive Mark Filter (Optional for this page) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">敏感度分類 (是否敏感)</label>
+                        <div class="mt-1 flex space-x-2">
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-sensitive="是">是</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-sensitive="否">否</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm active" data-sensitive="all">全部</button>
+                        </div>
+                    </div>
+                </div>
+                <button id="reset-data-domain-filters" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-md shadow-sm hover:bg-gray-300">重設篩選</button>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 table-fixed-header">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 fixed-column-left-header group-header-basic rounded-tl-lg">基本數據資訊<br><span class="font-normal text-gray-600">(名稱 / 中文名 / 簡述)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-basic">SRC_TYPE</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-basic">PK_COLNAME</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">BUSINESS_GLOSSARY</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">TAG</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">DATADOMAIN_ID</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">MEMO</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">DQ_SCORE</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">SENSITIVE_MARK</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">數據擁有者<br><span class="font-normal text-gray-600">(名稱 / 部門)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">ACCESS_PERMISSION</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">AUTHORIZED_DEPT</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white" id="data-domain-table-body">
+                        <!-- Sample Row 1 -->
+                        <tr data-domain="客戶資料" data-dq="95" data-sensitive="是" data-sensitive-category="PII">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">CUSTOMER_MASTER</div>
+                                <div class="text-gray-600">客戶主檔</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        存放所有客戶基本資料，包括姓名、聯絡方式、地址等重要數據...
+                                        <span class="tooltip-text">存放所有客戶的基本資訊，包括姓名、聯絡方式、地址、身份證號碼、生日等重要數據，是企業進行客戶分析和行銷活動的基礎。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">OLTP</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">CUSTOMER_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    客戶、個人資訊、會員...
+                                    <span class="tooltip-text">客戶、個人資訊、會員、聯絡人、地址、身份證、手機、Email 等多個業務詞彙。</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">VIP, 高價值</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">客戶資料</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    客戶基本資料包含個資，需嚴格控管存取權限...
+                                    <span class="tooltip-text">客戶基本資料包含個資，需嚴格控管存取權限，並定期進行數據品質檢查，確保資料的準確性和完整性。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-green-500" style="width: 95%;">95</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-lock text-red-500 text-lg" title="敏感數據 (PII)"></i> 是 (PII)
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">王大明</div>
+                                <div class="text-gray-600 text-sm">業務部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="僅限內部">僅限內部</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="tooltip-container truncate-text">
+                                    市場部, 客服部, 數據分析部...
+                                    <span class="tooltip-text">市場部, 客服部, 數據分析部, 風險管理部, 法務合規部</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Sample Row 2 -->
+                        <tr data-domain="產品管理" data-dq="78" data-sensitive="否" data-sensitive-category="無">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">PRODUCT_CATALOG</div>
+                                <div class="text-gray-600">產品型錄</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        產品基本資訊與分類，包括名稱、描述、價格、庫存量等...
+                                        <span class="tooltip-text">產品基本資訊與分類，包括名稱、描述、價格、庫存量、供應商等，用於電商網站展示和內部產品管理。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">DW</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">PRODUCT_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    產品、分類、庫存...
+                                    <span class="tooltip-text">產品、分類、庫存、價格、供應商、庫存狀態 等多個業務詞彙。</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">電商, 熱門</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">產品管理</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    產品型錄資料量大，需定期更新確保資訊準確...
+                                    <span class="tooltip-text">產品型錄資料量大，需定期更新確保資訊準確，並與後台庫存系統同步，以提供最新的產品資訊給客戶。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-yellow-500" style="width: 78%;">78</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-lock-open text-gray-500 text-lg" title="非敏感數據"></i> 否
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">李小花</div>
+                                <div class="text-gray-600 text-sm">產品部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="公開">公開</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner">全公司</td>
+                        </tr>
+                        <!-- Sample Row 3 -->
+                        <tr data-domain="銷售分析" data-dq="62" data-sensitive="是" data-sensitive-category="財務敏感資訊">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">ORDER_DETAILS</div>
+                                <div class="text-gray-600">訂單明細</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        訂單中每個產品的詳細資訊，包括數量、價格、折扣等...
+                                        <span class="tooltip-text">訂單中每個產品的詳細資訊，包括數量、價格、折扣、運費等，用於銷售分析和訂單履約追蹤。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">OLTP</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">ORDER_ID, PRODUCT_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    訂單、商品、銷售...
+                                    <span class="tooltip-text">訂單、商品、銷售、交易、顧客、數量、價格 等多個業務詞彙。</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">交易, 銷售</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">銷售分析</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    訂單資料量大且即時性要求高，需要高效的資料處理...
+                                    <span class="tooltip-text">訂單資料量大且即時性要求高，需要高效的資料處理和儲存方案，以支援即時銷售分析。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-red-500" style="width: 62%;">62</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-lock text-red-500 text-lg" title="敏感數據 (財務敏感資訊)"></i> 是 (財務敏感資訊)
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">陳經理</div>
+                                <div class="text-gray-600 text-sm">IT 部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="部門內部">部門內部</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="tooltip-container truncate-text">
+                                    業務部, 財務部, 供應鏈部...
+                                    <span class="tooltip-text">業務部, 財務部, 供應鏈部, 客服部</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Sample Row 4 -->
+                        <tr data-domain="行銷活動" data-dq="88" data-sensitive="是" data-sensitive-category="認證與存取資訊">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">USER_AUTH_LOG</div>
+                                <div class="text-gray-600">用戶認證日誌</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        記錄用戶登入、登出及其他認證相關活動的日誌...
+                                        <span class="tooltip-text">記錄用戶登入、登出及其他認證相關活動的日誌，包含時間戳、用戶ID、IP地址等。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">LOG</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">LOG_ID, USER_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    用戶、認證、日誌...
+                                    <span class="tooltip-text">用戶、認證、日誌、登入、登出、IP地址、活動時間</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">安全, 認證</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">行銷活動</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    用於安全審計與異常行為檢測...
+                                    <span class="tooltip-text">用於安全審計與異常行為檢測，確保系統安全性和用戶行為的可追溯性。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-yellow-500" style="width: 88%;">88</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-fingerprint text-purple-500 text-lg" title="敏感數據 (認證與存取資訊)"></i> 是 (認證與存取資訊)
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">林技術</div>
+                                <div class="text-gray-600 text-sm">資安部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="僅限資安">僅限資安</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="tooltip-container truncate-text">
+                                    資安部, 法務部...
+                                    <span class="tooltip-text">資安部, 法務部, 稽核部</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Sample Row 5 -->
+                        <tr data-domain="客戶資料" data-dq="92" data-sensitive="是" data-sensitive-category="合規性特殊資料">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">AML_CUSTOMER_RISK</div>
+                                <div class="text-gray-600">AML客戶風險評級</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        存放客戶反洗錢風險評級及相關審查結果...
+                                        <span class="tooltip-text">存放客戶反洗錢風險評級及相關審查結果，用於合規性監控和報告。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">DM</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">CUSTOMER_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    AML、風險、合規...
+                                    <span class="tooltip-text">AML、風險、合規、客戶風險評級、交易監控</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">合規, AML</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">客戶資料</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    根據監管要求，定期更新風險評級...
+                                    <span class="tooltip-text">根據監管要求，定期更新風險評級，確保符合反洗錢法規。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-green-500" style="width: 92%;">92</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-gavel text-orange-500 text-lg" title="敏感數據 (合規性特殊資料)"></i> 是 (合規性特殊資料)
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">張合規</div>
+                                <div class="text-gray-600 text-sm">法務部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="僅限合規">僅限合規</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="tooltip-container truncate-text">
+                                    合規部, 稽核部...
+                                    <span class="tooltip-text">合規部, 稽核部, 風險管理部</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Sample Row 6 -->
+                        <tr data-domain="客戶資料" data-dq="80" data-sensitive="是" data-sensitive-category="醫療或特殊保護資料">
+                            <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                                <div class="font-medium text-gray-900">HEALTH_INSURANCE_CLAIMS</div>
+                                <div class="text-gray-600">健康保險理賠</div>
+                                <div class="pt-1 text-gray-700">
+                                    <div class="tooltip-container truncate-text">
+                                        記錄健康保險理賠詳細信息，包括醫療費用、診斷和治療...
+                                        <span class="tooltip-text">記錄健康保險理賠詳細信息，包括醫療費用、診斷和治療、就診日期等，屬於高度敏感的醫療數據。</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">DW</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-basic">CLAIM_ID, POLICY_ID</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    健康、理賠、保險...
+                                    <span class="tooltip-text">健康、理賠、保險、診斷、治療、醫療費用</span>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">醫療, 保險</td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">客戶資料</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-business">
+                                <div class="tooltip-container truncate-text">
+                                    嚴格遵守醫療資料保護法規...
+                                    <span class="tooltip-text">嚴格遵守醫療資料保護法規（如 HIPAA），確保數據隱私和安全。</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <div class="dq-score-bar-container">
+                                    <div class="dq-score-bar bg-yellow-500" style="width: 80%;">80</div>
+                                </div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                                <i class="fa-solid fa-heart-pulse text-blue-500 text-lg" title="敏感數據 (醫療或特殊保護資料)"></i> 是 (醫療或特殊保護資料)
+                            </td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="font-medium text-gray-900">黃保險</div>
+                                <div class="text-gray-600 text-sm">保險部</div>
+                            </td>
+                            <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="僅限醫療">僅限醫療</td>
+                            <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                                <div class="tooltip-container truncate-text">
+                                    保險部, 法務部...
+                                    <span class="tooltip-text">保險部, 法務部, 理賠部</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Page 2: 依敏感性標籤分類 -->
+        <div id="sensitivity-tag" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">2. 依敏感性標籤分類瀏覽</h2>
+
+            <!-- Filter Section for Sensitivity Tag -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-inner">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">篩選條件</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Sensitive Category Filter -->
+                    <div>
+                        <label for="sensitive-category-filter" class="block text-sm font-medium text-gray-700 mb-1">敏感性標籤分類</label>
+                        <select id="sensitive-category-filter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                            <option value="all">全部</option>
+                            <option value="PII">PII (個人識別資訊)</option>
+                            <option value="財務敏感資訊">財務敏感資訊</option>
+                            <option value="認證與存取資訊">認證與存取資訊</option>
+                            <option value="合規性特殊資料">合規性特殊資料</option>
+                            <option value="醫療或特殊保護資料">醫療或特殊保護資料</option>
+                            <option value="無">非敏感 (無)</option>
+                        </select>
+                    </div>
+
+                     <!-- DQ Score Filter (Optional for this page) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">品質分數</label>
+                        <div class="mt-1 flex space-x-2">
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="90" data-max="100">高 (>=90)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="70" data-max="89">中 (70-89)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm" data-min="0" data-max="69">低 (&lt;70)</button>
+                            <button type="button" class="filter-button px-3 py-2 text-sm font-medium rounded-md shadow-sm active" data-min="0" data-max="100">全部</button>
+                        </div>
+                    </div>
+                </div>
+                <button id="reset-sensitivity-filters" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-md shadow-sm hover:bg-gray-300">重設篩選</button>
+            </div>
+
+            <!-- Data Table (reusing structure, but filtered by sensitive category) -->
+            <div class="table-container rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 table-fixed-header">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 fixed-column-left-header group-header-basic rounded-tl-lg">基本數據資訊<br><span class="font-normal text-gray-600">(名稱 / 中文名 / 簡述)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-basic">SRC_TYPE</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-basic">PK_COLNAME</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">BUSINESS_GLOSSARY</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">TAG</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">DATADOMAIN_ID</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">MEMO</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">DQ_SCORE</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">SENSITIVE_MARK</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">數據擁有者<br><span class="font-normal text-gray-600">(名稱 / 部門)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">ACCESS_PERMISSION</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">AUTHORIZED_DEPT</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white" id="sensitivity-table-body">
+                        <!-- Rows will be dynamically cloned from data-domain-table-body -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Page 3: 依資料品質分數分類 -->
+        <div id="data-quality-score" class="tab-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">3. 依資料品質分數分類瀏覽 (儀表板)</h2>
+
+            <!-- Quality Score Dashboard Summary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="quality-card high">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">高品質數據</h3>
+                    <p class="text-5xl font-bold text-green-600" id="high-quality-count">0</p>
+                    <p class="text-gray-500 mt-2">(品質分數 &gt;= 90)</p>
+                    <button class="mt-4 px-4 py-2 bg-green-100 text-green-800 text-sm font-medium rounded-md hover:bg-green-200 transition">查看詳細</button>
+                </div>
+                <div class="quality-card medium">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">中等品質數據</h3>
+                    <p class="text-5xl font-bold text-yellow-600" id="medium-quality-count">0</p>
+                    <p class="text-gray-500 mt-2">(品質分數 70-89)</p>
+                    <button class="mt-4 px-4 py-2 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-md hover:bg-yellow-200 transition">查看詳細</button>
+                </div>
+                <div class="quality-card low">
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">低品質數據</h3>
+                    <p class="text-5xl font-bold text-red-600" id="low-quality-count">0</p>
+                    <p class="text-gray-500 mt-2">(品質分數 &lt; 70)</p>
+                    <button class="mt-4 px-4 py-2 bg-red-100 text-red-800 text-sm font-medium rounded-md hover:bg-red-200 transition">查看詳細</button>
+                </div>
+            </div>
+
+            <!-- Detailed Data Quality List -->
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">所有數據資產 (依品質分數排序)</h3>
+            <div class="table-container rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 table-fixed-header">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 fixed-column-left-header group-header-basic rounded-tl-lg">基本數據資訊<br><span class="font-normal text-gray-600">(名稱 / 中文名 / 簡述)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">DQ_SCORE</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-quality">SENSITIVE_MARK</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-business">DATADOMAIN_ID</th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">數據擁有者<br><span class="font-normal text-gray-600">(名稱 / 部門)</span></th>
+                            <th scope="col" class="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 group-header-owner">ACCESS_PERMISSION</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white" id="data-quality-table-body">
+                        <!-- Rows will be dynamically cloned from data-domain-table-body and sorted -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Suggestion Section -->
+        <div class="mt-10 p-6 bg-blue-50 rounded-lg shadow-md border border-blue-200">
+            <h2 class="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+                <i class="fa-solid fa-lightbulb text-blue-600 mr-3"></i> 數據建議中心
+            </h2>
+            <p class="text-gray-700 mb-4">發現有新的業務詞彙或標籤需要加入嗎？或者現有數據資訊不夠完善？您的建議將有助於 Data Owner 提升數據資產的價值！</p>
+
+            <button id="open-suggestion-modal" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition duration-150 ease-in-out">
+                提出新建議
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Suggestion Modal (Hidden by default) -->
+    <div id="suggestion-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">提出新建議</h3>
+            
+            <form id="suggestion-form">
+                <div class="mb-4">
+                    <label for="suggestion-type" class="block text-sm font-medium text-gray-700 mb-1">建議類型 <span class="text-red-500">*</span></label>
+                    <select id="suggestion-type" name="suggestionType" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
+                        <option value="">請選擇建議類型</option>
+                        <option value="business_glossary">新增業務詞彙</option>
+                        <option value="tag">新增標籤</option>
+                        <option value="modify_glossary">修改現有業務詞彙</option>
+                        <option value="modify_tag">修改現有標籤</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="suggestion-name" class="block text-sm font-medium text-gray-700 mb-1">建議名稱 <span class="text-red-500">*</span></label>
+                    <input type="text" id="suggestion-name" name="suggestionName" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="例如：客戶忠誠度, 潛在客戶">
+                    <p id="duplicate-check-message" class="mt-1 text-sm text-yellow-600 hidden">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> 已存在相似名稱的項目，請確認是否為重複建議或建議修改。
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="suggestion-description" class="block text-sm font-medium text-gray-700 mb-1">建議定義/描述 <span class="text-red-500">*</span></label>
+                    <textarea id="suggestion-description" name="suggestionDescription" rows="4" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="請詳細說明此詞彙的業務意義、計算方式或標籤的用途..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label for="related-asset" class="block text-sm font-medium text-gray-700 mb-1">相關數據資產 (選填)</label>
+                    <input type="text" id="related-asset" name="relatedAsset" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="例如：CUSTOMER_MASTER.CUSTOMER_SEGMENT, ORDER_DETAILS.PRODUCT_CATEGORY">
+                    <p class="mt-1 text-sm text-gray-500">請輸入相關的資料表或欄位名稱，多個請用逗號分隔。</p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="suggestion-reason" class="block text-sm font-medium text-gray-700 mb-1">建議理由/緊急程度 (選填)</label>
+                    <textarea id="suggestion-reason" name="suggestionReason" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="此建議為何重要？有什麼急迫性？"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="close-suggestion-modal" class="px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">提交建議</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const dataTableBody = document.getElementById('data-domain-table-body'); // Master data source
+
+            // --- Tab Switching Logic ---
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    const activeTabContent = document.getElementById(tabId);
+                    if (activeTabContent) {
+                        activeTabContent.classList.add('active');
+                    }
+                    
+
+                    // Re-apply filters or re-render content when switching tabs
+                    if (tabId === 'data-domain') {
+                        applyDataDomainFilters();
+                    } else if (tabId === 'sensitivity-tag') {
+                        initializeSensitivityTab();
+                    } else if (tabId === 'data-quality-score') {
+                        initializeDataQualityTab();
+                    }
+                });
+            });
+
+            // --- Page 1: 依數據主題分類 Filters ---
+            const dataDomainFilter = document.getElementById('data-domain-filter');
+            const dataDomainDqScoreFilterButtons = document.querySelectorAll('#data-domain .filter-button[data-min], #data-domain .filter-button[data-max]');
+            const dataDomainSensitiveFilterButtons = document.querySelectorAll('#data-domain .filter-button[data-sensitive]');
+            const resetDataDomainFiltersButton = document.getElementById('reset-data-domain-filters');
+
+            let dataDomainCurrentFilters = {
+                domain: 'all',
+                dqMin: 0,
+                dqMax: 100,
+                sensitive: 'all'
+            };
+
+            function applyDataDomainFilters() {
+                const rows = dataTableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const domain = row.dataset.domain;
+                    const dq = parseInt(row.dataset.dq);
+                    const sensitive = row.dataset.sensitive;
+
+                    const matchDomain = dataDomainCurrentFilters.domain === 'all' || domain === dataDomainCurrentFilters.domain;
+                    const matchDq = dq >= dataDomainCurrentFilters.dqMin && dq <= dataDomainCurrentFilters.dqMax;
+                    const matchSensitive = dataDomainCurrentFilters.sensitive === 'all' || sensitive === dataDomainCurrentFilters.sensitive;
+
+                    if (matchDomain && matchDq && matchSensitive) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            dataDomainFilter.addEventListener('change', (event) => {
+                dataDomainCurrentFilters.domain = event.target.value;
+                applyDataDomainFilters();
+            });
+
+            dataDomainDqScoreFilterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    dataDomainDqScoreFilterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    dataDomainCurrentFilters.dqMin = parseInt(button.dataset.min);
+                    dataDomainCurrentFilters.dqMax = parseInt(button.dataset.max);
+                    applyDataDomainFilters();
+                });
+            });
+
+            dataDomainSensitiveFilterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    dataDomainSensitiveFilterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    dataDomainCurrentFilters.sensitive = button.dataset.sensitive;
+                    applyDataDomainFilters();
+                });
+            });
+
+            resetDataDomainFiltersButton.addEventListener('click', () => {
+                if (dataDomainFilter) dataDomainFilter.value = 'all';
+                dataDomainDqScoreFilterButtons.forEach(button => {
+                    if (button.dataset.min === "0" && button.dataset.max === "100") { button.classList.add('active'); } else { button.classList.remove('active'); }
+                });
+                dataDomainSensitiveFilterButtons.forEach(button => {
+                    if (button.dataset.sensitive === "all") { button.classList.add('active'); } else { button.classList.remove('active'); }
+                });
+                dataDomainCurrentFilters = { domain: 'all', dqMin: 0, dqMax: 100, sensitive: 'all' };
+                applyDataDomainFilters();
+            });
+
+            // --- Page 2: 依敏感性標籤分類 Filters ---
+            const sensitivityTableBody = document.getElementById('sensitivity-table-body');
+            const sensitiveCategoryFilter = document.getElementById('sensitive-category-filter');
+            const sensitivityDqScoreFilterButtons = document.querySelectorAll('#sensitivity-tag .filter-button[data-min], #sensitivity-tag .filter-button[data-max]');
+            const resetSensitivityFiltersButton = document.getElementById('reset-sensitivity-filters');
+
+            let sensitivityCurrentFilters = {
+                category: 'all',
+                dqMin: 0,
+                dqMax: 100
+            };
+
+            function applySensitivityFilters() {
+                const rows = sensitivityTableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const category = row.dataset.sensitiveCategory;
+                    const dq = parseInt(row.dataset.dq);
+
+                    const matchCategory = sensitivityCurrentFilters.category === 'all' || category === sensitivityCurrentFilters.category;
+                    const matchDq = dq >= sensitivityCurrentFilters.dqMin && dq <= sensitivityCurrentFilters.dqMax;
+
+                    if (matchCategory && matchDq) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            function initializeSensitivityTab() {
+                // Clear existing rows and clone from master
+                if (sensitivityTableBody) sensitivityTableBody.innerHTML = '';
+                dataTableBody.querySelectorAll('tr').forEach(row => {
+                    if (sensitivityTableBody) sensitivityTableBody.appendChild(row.cloneNode(true));
+                });
+                
+                // Reset filters to initial state
+                if (sensitiveCategoryFilter) sensitiveCategoryFilter.value = 'all';
+                sensitivityDqScoreFilterButtons.forEach(button => {
+                    if (button.dataset.min === "0" && button.dataset.max === "100") { button.classList.add('active'); } else { button.classList.remove('active'); }
+                });
+                sensitivityCurrentFilters = { category: 'all', dqMin: 0, dqMax: 100 };
+                applySensitivityFilters(); // Apply initial filter
+            }
+
+            sensitiveCategoryFilter.addEventListener('change', (event) => {
+                sensitivityCurrentFilters.category = event.target.value;
+                applySensitivityFilters();
+            });
+
+            sensitivityDqScoreFilterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    sensitivityDqScoreFilterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    sensitivityCurrentFilters.dqMin = parseInt(button.dataset.min);
+                    sensitivityCurrentFilters.dqMax = parseInt(button.dataset.max);
+                    applySensitivityFilters();
+                });
+            });
+
+            resetSensitivityFiltersButton.addEventListener('click', () => {
+                if (sensitiveCategoryFilter) sensitiveCategoryFilter.value = 'all';
+                sensitivityDqScoreFilterButtons.forEach(button => {
+                    if (button.dataset.min === "0" && button.dataset.max === "100") { button.classList.add('active'); } else { button.classList.remove('active'); }
+                });
+                sensitivityCurrentFilters = { category: 'all', dqMin: 0, dqMax: 100 };
+                applySensitivityFilters();
+            });
+
+
+            // --- Page 3: 依資料品質分數分類 ---
+            const dataQualityTableBody = document.getElementById('data-quality-table-body');
+            const highQualityCount = document.getElementById('high-quality-count');
+            const mediumQualityCount = document.getElementById('medium-quality-count');
+            const lowQualityCount = document.getElementById('low-quality-count');
+
+            function initializeDataQualityTab() {
+                if (dataQualityTableBody) dataQualityTableBody.innerHTML = ''; // Clear existing rows
+                
+                let high = 0, medium = 0, low = 0;
+                let allRows = [];
+
+                dataTableBody.querySelectorAll('tr').forEach(row => {
+                    const dq = parseInt(row.dataset.dq);
+                    const clonedRow = row.cloneNode(true);
+                    
+                    // Simplify the cloned row for this specific table's display
+                    // Keep only relevant columns for the quality page's detailed list
+                    const fixedColumnLeftContentElement = row.querySelector('.fixed-column-left.group-cell-basic');
+                    const fixedColumnLeftContent = fixedColumnLeftContentElement ? fixedColumnLeftContentElement.innerHTML : '';
+                    
+                    const dqScoreBarContainerElement = row.querySelector('.dq-score-bar-container');
+                    const dqScoreBarContainer = dqScoreBarContainerElement ? dqScoreBarContainerElement.outerHTML : '';
+                    
+                    const sensitiveMarkElement = row.querySelector('[data-sensitive]');
+                    const sensitiveMarkContent = sensitiveMarkElement ? sensitiveMarkElement.innerHTML : '';
+                    
+                    const dataDomainId = row.dataset.domain || '';
+                    
+                    const ownerNameElement = row.querySelector('.group-cell-owner > div:first-child');
+                    const ownerDeptElement = row.querySelector('.group-cell-owner > div:last-child');
+                    const ownerNameContent = ownerNameElement ? ownerNameElement.innerHTML : '';
+                    const ownerDeptContent = ownerDeptElement ? ownerDeptElement.innerHTML : '';
+                    
+                    const accessPermissionElement = row.querySelector('[data-permission]');
+                    const accessPermission = accessPermissionElement ? accessPermissionElement.textContent : '';
+
+                    clonedRow.innerHTML = `
+                        <td class="py-4 px-4 text-sm fixed-column-left group-cell-basic">
+                            ${fixedColumnLeftContent}
+                        </td>
+                        <td class="py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                            ${dqScoreBarContainer}
+                        </td>
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 text-center group-cell-quality">
+                            ${sensitiveMarkContent}
+                        </td>
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-business">
+                            ${dataDomainId}
+                        </td>
+                        <td class="py-4 px-4 text-sm text-gray-700 group-cell-owner">
+                             ${ownerNameContent} <div class="text-gray-600 text-sm">${ownerDeptContent}</div>
+                        </td>
+                        <td class="whitespace-nowrap py-4 px-4 text-sm text-gray-700 group-cell-owner" data-permission="${accessPermission}">
+                            ${accessPermission}
+                        </td>
+                    `;
+                    allRows.push({ element: clonedRow, dq: dq });
+
+                    if (dq >= 90) high++;
+                    else if (dq >= 70) medium++;
+                    else low++;
+                });
+
+                if (highQualityCount) highQualityCount.textContent = high;
+                if (mediumQualityCount) mediumQualityCount.textContent = medium;
+                if (lowQualityCount) lowQualityCount.textContent = low;
+
+                // Sort rows by DQ Score (descending)
+                allRows.sort((a, b) => b.dq - a.dq);
+                allRows.forEach(item => {
+                    if (dataQualityTableBody) dataQualityTableBody.appendChild(item.element);
+                });
+            }
+
+            // --- Suggestion Modal Logic ---
+            const openSuggestionModalBtn = document.getElementById('open-suggestion-modal');
+            const suggestionModal = document.getElementById('suggestion-modal');
+            const closeSuggestionModalBtn = document.getElementById('close-suggestion-modal');
+            const suggestionForm = document.getElementById('suggestion-form');
+            const suggestionNameInput = document.getElementById('suggestion-name');
+            const duplicateCheckMessage = document.getElementById('duplicate-check-message');
+
+            // Simulate existing terms for duplicate check
+            const existingTerms = ['客戶忠誠度', '潛在客戶', '產品類別', '訂單狀態', '用戶行為', 'PII'];
+
+            openSuggestionModalBtn.addEventListener('click', () => {
+                if (suggestionModal) suggestionModal.classList.remove('hidden');
+            });
+
+            closeSuggestionModalBtn.addEventListener('click', () => {
+                if (suggestionModal) suggestionModal.classList.add('hidden');
+                if (suggestionForm) suggestionForm.reset();
+                if (duplicateCheckMessage) duplicateCheckMessage.classList.add('hidden');
+            });
+
+            suggestionNameInput.addEventListener('input', () => {
+                const inputValue = suggestionNameInput.value.trim();
+                if (inputValue && existingTerms.some(term => term.includes(inputValue) || inputValue.includes(term))) {
+                    if (duplicateCheckMessage) duplicateCheckMessage.classList.remove('hidden');
+                } else {
+                    if (duplicateCheckMessage) duplicateCheckMessage.classList.add('hidden');
+                }
+            });
+
+            suggestionForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                // Here you would typically send the form data to a backend API
+                // For this prototype, we'll just log it and close the modal.
+                const formData = new FormData(suggestionForm);
+                const data = {};
+                formData.forEach((value, key) => (data[key] = value));
+                console.log('Suggested Data:', data);
+                
+                alert('您的建議已提交，感謝您的貢獻！'); // Use alert for simplicity in prototype
+                if (suggestionModal) suggestionModal.classList.add('hidden');
+                if (suggestionForm) suggestionForm.reset();
+                if (duplicateCheckMessage) duplicateCheckMessage.classList.add('hidden');
+            });
+
+
+            // --- Initial Load ---
+            applyDataDomainFilters(); // Apply filters to the default active tab
+            // Note: Other tabs are initialized when they become active.
+            // For sensitivity tab, clone the master rows initially.
+            // For data quality tab, calculate and sort initially.
+        });
+    </script>
+</body>
+</html>

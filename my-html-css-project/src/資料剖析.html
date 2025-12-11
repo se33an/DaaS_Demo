@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaaS 資料品質管理 v70 (8 Rules Integration)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            /* Natural Page Scroll */
+            overflow-y: auto;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Sticky Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 24px;
+            width: 100%;
+            height: auto;
+            overflow: visible;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 24px;
+            background-color: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            overflow: visible;
+        }
+
+        .filter-select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            padding: 6px 12px;
+            font-size: 0.875rem;
+            width: 100%;
+            background-color: #fff;
+            color: #4b5563;
+        }
+
+        /* Accordion */
+        .accordion-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-bottom: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: #f9fafb;
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            transition: 0.2s;
+        }
+
+        .accordion-header:hover {
+            background-color: #f3f4f6;
+        }
+
+        .accordion-header.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .accordion-icon {
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 16px;
+            background-color: white;
+        }
+
+        .accordion-content.show {
+            display: block;
+        }
+
+        /* Results Area */
+        .results-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            overflow: visible;
+        }
+
+        .results-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            padding-bottom: 4px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            min-width: 1800px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        thead th {
+            position: sticky;
+            top: 64px;
+            z-index: 30;
+            background-color: #f8fafc;
+            border-bottom: 2px solid #d1d5db;
+            color: #4b5563;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 14px 8px;
+            text-align: left;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        thead th:hover {
+            background-color: #e2e8f0;
+            color: #1f2937;
+        }
+
+        thead th.no-sort {
+            cursor: default;
+        }
+
+        .sort-icon {
+            margin-left: 4px;
+            color: #9ca3af;
+            font-size: 0.7rem;
+        }
+
+        tbody td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #f3f4f6;
+            vertical-align: top;
+            font-size: 0.875rem;
+            color: #374151;
+            word-break: break-word;
+            white-space: normal;
+        }
+
+        .table-group-header td {
+            background-color: #e5e7eb;
+            cursor: pointer;
+            font-weight: bold;
+            color: #1f2937;
+            padding: 10px 16px;
+        }
+
+        .table-group-header:hover td {
+            background-color: #d1d5db;
+        }
+
+        .column-row:hover td {
+            background-color: #f8fafc;
+        }
+
+        .tbody-collapsed .column-row {
+            display: none;
+        }
+
+        .group-toggle-icon {
+            transition: transform 0.2s;
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+        }
+
+        .tbody-collapsed .group-toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        /* Pagination */
+        .pagination-bar {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .step-indicator {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-active .step-indicator {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .step-pending .step-indicator {
+            background-color: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .rule-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .rule-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .rule-params {
+            display: none;
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+            background-color: white;
+        }
+
+        .rule-card.selected .rule-params {
+            display: block;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header class="px-6 shadow-sm flex items-center justify-between h-16 flex-shrink-0 bg-white">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-1.5 rounded font-bold tracking-wider text-sm">DaaS</div>
+                <span class="font-bold text-gray-800 text-lg tracking-tight">數據品質管理平台</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div
+                    class="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+                    PM</div>
+            </div>
+        </header>
+
+        <div class="main-area">
+
+            <div class="filter-section">
+                <div class="flex justify-between items-center cursor-pointer mb-6" onclick="toggleFilterPanel()">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-search text-blue-600"></i> 搜尋條件
+                    </h2>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="px-8 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 shadow-sm transition"
+                            onclick="event.stopPropagation(); executeSearch();">
+                            搜尋
+                        </button>
+                        <i class="fas fa-chevron-up text-gray-500 transform transition-transform"
+                            id="filter-panel-icon"></i>
+                    </div>
+                </div>
+
+                <div id="filter-panel-content" class="block">
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">關鍵字搜尋</label>
+                        <input type="text" placeholder="輸入資料表名稱、欄位名稱..."
+                            class="w-full border border-gray-300 rounded p-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)"><span>數據主題 (Data
+                                    Domain)</span><i class="fas fa-chevron-down accordion-icon text-gray-400"></i></div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">客戶主題</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">銷售主題</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">財務主題</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)"><span>資料類別 (Data
+                                    Class)</span><i class="fas fa-chevron-down accordion-icon text-gray-400"></i></div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">ID</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Code</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">Date</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Amount</label><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">Text</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)"><span>敏感性標記 (Sensitive
+                                    Mark)</span><i class="fas fa-chevron-down accordion-icon text-gray-400"></i></div>
+                            <div class="accordion-content">
+                                <div class="flex flex-wrap gap-4 text-sm"><label class="flex items-center"><input
+                                            type="checkbox" class="mr-2 h-4 w-4">PII (個資)</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Financial</label><label
+                                        class="flex items-center"><input type="checkbox"
+                                            class="mr-2 h-4 w-4">Confidential</label></div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)"><span>任務狀態篩選</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i></div>
+                            <div class="accordion-content">
+                                <div class="flex flex-col gap-3 text-sm">
+                                    <div class="flex gap-6"><label
+                                            class="text-blue-700 font-medium flex items-center"><input type="checkbox"
+                                                class="mr-2 h-4 w-4">有配置任務</label><label
+                                            class="text-red-600 flex items-center"><input type="checkbox"
+                                                class="mr-2 h-4 w-4">未配置任務</label></div>
+                                    <div class="flex items-center gap-3"><label
+                                            class="text-gray-500 whitespace-nowrap w-24">特定任務:</label><select
+                                            class="filter-select">
+                                            <option value="">-- 全部 --</option>
+                                            <option>Daily DQ Check</option>
+                                            <option>Monthly Report</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item w-full">
+                            <div class="accordion-header" onclick="toggleAccordion(this)"><span>規則狀態篩選</span><i
+                                    class="fas fa-chevron-down accordion-icon text-gray-400"></i></div>
+                            <div class="accordion-content">
+                                <div class="flex flex-col gap-3 text-sm">
+                                    <div class="flex gap-6"><label
+                                            class="text-blue-700 font-medium flex items-center"><input type="checkbox"
+                                                class="mr-2 h-4 w-4">有配置規則</label><label
+                                            class="text-red-600 flex items-center"><input type="checkbox"
+                                                class="mr-2 h-4 w-4">未配置規則</label></div>
+                                    <div class="flex items-center gap-3"><label
+                                            class="text-gray-500 whitespace-nowrap w-24">特定規則:</label><select
+                                            class="filter-select">
+                                            <option value="">-- 全部 --</option>
+                                            <option>資料完備性</option>
+                                            <option>資料一致性</option>
+                                            <option>資料準確性</option>
+                                            <option>資料健全性</option>
+                                            <option>資料獨特性</option>
+                                            <option>資料規範</option>
+                                            <option>自訂 SQL</option>
+                                        </select></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="empty-state"
+                class="flex flex-col items-center justify-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300 py-24">
+                <i class="fas fa-search text-6xl mb-4 text-gray-200"></i>
+                <p class="text-lg font-medium">請輸入條件並點擊「搜尋」以檢視資產列表</p>
+            </div>
+
+            <div id="results-area" class="results-container hidden animate-fade-in">
+                <div class="results-header">
+                    <h3 class="font-bold text-gray-800 text-lg">搜尋結果 <span
+                            class="text-sm font-normal text-gray-500 ml-2 bg-gray-100 px-3 py-1 rounded-full">共 <span
+                                id="total-count">0</span> 欄位</span></h3>
+                    <button id="btn-apply-rules"
+                        class="px-5 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center"
+                        disabled onclick="openWizard()">
+                        <i class="fas fa-magic mr-2"></i>套用規則 (<span id="selected-count">0</span>)
+                    </button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <colgroup>
+                            <col style="width: 60px;">
+                            <col style="width: 250px;">
+                            <col style="width: 120px;">
+                            <col style="width: 100px;">
+                            <col style="width: 100px;">
+                            <col style="width: 280px;">
+                            <col style="width: 120px;">
+                            <col style="width: 160px;">
+                            <col style="width: 140px;">
+                            <col style="width: 160px;">
+                            <col style="width: 120px;">
+                            <col style="width: 140px;">
+                            <col style="width: 140px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="text-center no-sort"><input type="checkbox" id="check-all"
+                                        class="rounded text-blue-600 w-4 h-4"></th>
+                                <th onclick="sortTable('name')">欄位名稱 <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('type')">Type <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('class')">Class <i class="fas fa-sort sort-icon"></i></th>
+                                <th onclick="sortTable('sensitive')">敏感性 <i class="fas fa-sort sort-icon"></i></th>
+                                <th class="border-l border-gray-200 no-sort">規則名稱</th>
+                                <th class="text-center no-sort">Base Line</th>
+                                <th class="text-center bg-blue-50 text-blue-800 no-sort">通過標準</th>
+                                <th class="text-center border-l border-gray-200" onclick="sortTable('status')">剖析狀態 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-right no-sort">掃描筆數</th>
+                                <th class="text-center" onclick="sortTable('task')">所屬任務 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-center border-l border-gray-200" onclick="sortTable('ruleTime')">規則更新時間
+                                    <i class="fas fa-sort sort-icon"></i></th>
+                                <th class="text-center" onclick="sortTable('profileTime')">剖析更新時間 <i
+                                        class="fas fa-sort sort-icon"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <div class="text-gray-600">顯示 1 到 10 筆，共 <span id="pag-total">0</span> 筆</div>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1 border rounded bg-white text-gray-400 cursor-not-allowed"
+                            disabled>上一頁</button>
+                        <button
+                            class="px-3 py-1 border rounded bg-blue-50 text-blue-600 font-bold border-blue-200">1</button>
+                        <button class="px-3 py-1 border rounded bg-white hover:bg-gray-50">2</button>
+                        <span class="px-2 py-1 text-gray-400">...</span>
+                        <button class="px-3 py-1 border rounded bg-white hover:bg-gray-50">下一頁</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="wizard-modal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl flex flex-col h-[85vh]">
+            <div class="px-8 py-5 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">套用規則精靈</h3><button onclick="closeWizard()"
+                    class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="px-10 py-6">
+                <div class="flex items-center justify-between relative">
+                    <div class="flex flex-col items-center step-item step-active" data-step="1">
+                        <div class="step-indicator">1</div><span class="text-xs mt-1 font-bold">規則參數</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="flex flex-col items-center step-item step-pending" data-step="2">
+                        <div class="step-indicator">2</div><span class="text-xs mt-1 font-bold">執行設定</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-8 bg-gray-50">
+                <div id="step-1" class="wizard-step">
+                    <h4 class="text-lg font-bold mb-4">Step 1: 選擇規則並設定參數</h4>
+                    <div id="rules-list-container" class="space-y-4"></div>
+                </div>
+                <div id="step-2" class="wizard-step hidden">
+                    <h4 class="text-lg font-bold mb-4">Step 2: 執行設定</h4>
+                    <div class="bg-blue-50 p-6 rounded border border-blue-200 mb-8">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div><label class="block text-xs font-bold mb-1">執行範圍 (Scope)</label>
+                                <div class="flex gap-2"><select id="w-scope"
+                                        class="border rounded px-3 py-2 w-1/2 text-sm">
+                                        <option value="full">全量檢查 (Full)</option>
+                                        <option value="percent">抽樣 %</option>
+                                        <option value="rows">抽樣 Rows</option>
+                                    </select><input type="number" id="w-scope-val"
+                                        class="border rounded px-3 py-2 w-1/2 text-sm hidden" placeholder="數值"></div>
+                            </div>
+                            <div><label class="block text-xs font-bold mb-1">資料過濾 (Where)</label><input type="text"
+                                    id="w-where" class="border rounded px-3 py-2 w-full text-sm"
+                                    placeholder="STATUS='A'"></div>
+                        </div>
+                    </div>
+                    <div class="text-center py-8 text-gray-600">
+                        <p class="mb-2">已選取 <span id="summary-rule-count" class="font-bold text-blue-600">0</span> 條規則
+                        </p>
+                        <p class="text-sm">點擊執行後，系統將於背景進行掃描，完成後請設定標準。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-4 border-t flex justify-between"><button id="btn-wiz-prev"
+                    class="px-6 py-2 border rounded" disabled>上一步</button>
+                <div class="flex gap-2"><button onclick="closeWizard()"
+                        class="px-6 py-2 text-gray-500">取消</button><button id="btn-wiz-next"
+                        class="px-6 py-2 bg-blue-600 text-white rounded">下一步</button><button id="btn-wiz-run"
+                        class="hidden px-6 py-2 bg-green-600 text-white rounded font-bold">執行資料剖析</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="criteria-modal" class="modal-overlay">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-96">
+            <h3 class="font-bold text-lg mb-4 border-b pb-2">品質標準設定</h3>
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-2 rounded text-sm text-gray-600">設定 <span id="crit-rule-name"
+                        class="font-bold text-blue-600"></span> 的通過標準</div>
+                <div><label class="text-xs text-gray-500 block mb-1">基準線 (Base Line)</label><input id="crit-base"
+                        class="w-full border bg-gray-100 rounded px-2 py-2 font-mono font-bold" readonly></div>
+                <div><label class="text-xs text-gray-500 block mb-1">容忍值 (Tolerance)</label>
+                    <div class="flex items-center"><input type="number" id="crit-tol" value="0"
+                            class="w-full border rounded px-2 py-2 font-bold text-center"><span
+                            class="ml-2 font-bold">%</span></div>
+                </div>
+                <div><label class="text-xs text-blue-700 font-bold block mb-1">通過標準 (Criteria)</label><input
+                        id="crit-val"
+                        class="w-full border bg-blue-50 rounded px-2 py-2 font-mono font-bold text-blue-700" readonly>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2"><button
+                    onclick="document.getElementById('criteria-modal').classList.remove('open')"
+                    class="px-3 py-2 bg-gray-100 rounded">取消</button><button onclick="saveCriteria()"
+                    class="px-3 py-2 bg-blue-600 text-white rounded">儲存設定</button></div>
+        </div>
+    </div>
+
+    <div id="detail-modal" class="modal-overlay">
+        <div class="bg-white rounded-lg shadow-xl w-[500px] p-6 relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="font-bold text-lg">規則詳情</h3><span id="badge-edit"
+                    class="hidden text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-200 font-bold">編輯模式</span>
+            </div>
+            <div id="view-mode-content" class="text-sm text-gray-600 space-y-2 mb-4"></div>
+            <div id="edit-mode-content" class="hidden flex flex-col gap-4 mb-4">
+                <div id="edit-inputs" class="bg-gray-50 p-4 rounded border border-gray-200"></div>
+                <div class="text-xs text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i> 修改參數將強制重跑</div>
+                <button id="btn-rerun"
+                    class="w-full py-2 bg-purple-100 text-purple-700 border border-purple-200 rounded font-bold"
+                    onclick="executeInEditMode()"><i class="fas fa-sync-alt mr-1"></i> 執行重算 (背景)</button>
+                <div id="post-run-area" class="hidden bg-blue-50 p-3 rounded border border-blue-200">
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><label class="text-xs text-gray-500">新基準</label><input id="e-base"
+                                class="w-full border px-1" readonly></div>
+                        <div><label class="text-xs text-gray-500">容忍值</label><input id="e-tol" type="number"
+                                class="w-full border px-1"></div>
+                        <div><label class="text-xs text-blue-700">新標準</label><input id="e-crit"
+                                class="w-full border bg-blue-100 px-1" readonly></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-6 pt-4 border-t"><button id="btn-del"
+                    class="hidden text-red-500 hover:bg-red-50 px-3 py-2 rounded text-sm"
+                    onclick="deleteRule()">移除規則</button>
+                <div class="flex gap-2 ml-auto"><button id="btn-close" onclick="closeDetailModal()"
+                        class="px-4 py-2 bg-gray-100 rounded">關閉</button><button id="btn-edit" onclick="enableEdit()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded">編輯參數</button><button id="btn-save"
+                        onclick="saveEditAndRun()"
+                        class="hidden px-4 py-2 bg-purple-600 text-white rounded font-bold">儲存設定</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Mock Data ---
+        const mockData = [
+            {
+                id: 'T1', name: 'CUSTOMER_MASTER', rowCount: 158200, domain: '客戶主題', columns: [
+                    { id: 'C1', name: 'CUST_ID', type: 'VARCHAR', class: 'ID', sensitive: 'PII', rules: [], selected: false },
+                    { id: 'C2', name: 'CUST_NAME', type: 'VARCHAR', class: 'Name', sensitive: 'PII', rules: [], selected: false },
+                    { id: 'C3', name: 'BIRTH_DT', type: 'DATE', class: 'Date', sensitive: 'PII', rules: [], selected: false }
+                ]
+            },
+            {
+                id: 'T2', name: 'SALES_TRANS', rowCount: 2450000, domain: '銷售主題', columns: [
+                    { id: 'C4', name: 'TXN_ID', type: 'VARCHAR', class: 'ID', sensitive: 'None', rules: [], selected: false },
+                    { id: 'C5', name: 'AMT', type: 'NUMBER', class: 'Amount', sensitive: 'Confidential', rules: [], selected: false }
+                ]
+            }
+        ];
+
+        const testBtnHtml = `<div class="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between"><button type="button" class="text-xs px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded hover:bg-purple-100 transition" onclick="testIndividualRule(event)"><i class="fas fa-flask mr-1"></i> 試跑 (Test)</button><span class="text-xs text-gray-500 test-result ml-2 font-medium"></span></div>`;
+
+        const ruleDefs = [
+            { id: 'completeness', name: '1. 資料完備性', desc: '檢查來源資料中空值 (Null)、空白 (Blank) 或零值 (Zero) 的佔比。', html: `<div class="flex gap-4 mb-2"><label><input type="checkbox" checked class="mr-1">Null</label><label><input type="checkbox" class="mr-1">Blank</label><label><input type="checkbox" class="mr-1">Zero</label></div>${testBtnHtml}` },
+            { id: 'consistency', name: '2. 資料一致性', desc: '檢查跨表欄位值分佈的一致性。', html: `<div class="grid grid-cols-3 gap-2 mb-2"><input class="border p-2 w-full text-sm" placeholder="Schema"><input class="border p-2 w-full text-sm" placeholder="Table"><input class="border p-2 w-full text-sm" placeholder="Column"></div>${testBtnHtml}` },
+            { id: 'accuracy_range', name: '3. 資料準確性 (數值)', desc: '依業務定義檢查內容值的合理範圍 (Min/Max)。', html: `<div class="flex gap-2 mb-2"><input type="number" placeholder="Min" class="border p-2 w-1/2 text-sm"><input type="number" placeholder="Max" class="border p-2 w-1/2 text-sm"></div>${testBtnHtml}` },
+            { id: 'accuracy_date', name: '4. 資料準確性 (日期)', desc: '確保日期屬性的類型與格式符合預期。', html: `<div class="mb-2"><select class="border p-2 w-full text-sm"><option>YYYY/MM/DD</option><option>YYYY-MM-DD</option><option>YYYYMMDD</option></select></div>${testBtnHtml}` },
+            { id: 'integrity', name: '5. 資料健全性', desc: '代碼健全性與主從關係檢查 (如 Orphan Data)。', html: `<div class="flex gap-2 mb-2"><input class="border p-2 w-1/2 text-sm" placeholder="Parent Table"><input class="border p-2 w-1/2 text-sm" placeholder="Parent Key"></div>${testBtnHtml}` },
+            { id: 'uniqueness', name: '6. 資料獨特性', desc: '檢核屬性是否為單一值或 Primary Key 重複。', html: `<div class="mb-2"><input type="text" placeholder="Columns (e.g. A,B)" class="border p-2 w-full text-sm"></div>${testBtnHtml}` },
+            { id: 'outlier', name: '7. 資料規範', desc: '偵測超出一般可容忍範圍 (Mean ± N * StdDev) 的數值。', html: `<div class="flex items-center mb-2"><span class="mr-2 text-sm">Mean ±</span><input type="number" value="3" class="border p-2 w-20 text-center text-sm mx-2"><span class="ml-2 text-sm">倍 StdDev</span></div>${testBtnHtml}` },
+            { id: 'custom', name: '8. 自訂 SQL', desc: '使用自訂 SQL 邏輯進行檢核。', html: `<div class="mb-2"><textarea class="border p-2 w-full text-sm font-mono" rows="3" placeholder="SELECT CASE WHEN ..."></textarea></div>${testBtnHtml}` }
+        ];
+
+        let currentStep = 1, selectedRules = [], editTarget = {}, sortConfig = { key: null, dir: 'asc' };
+
+        // --- UI ---
+        function toggleFilterPanel() {
+            const el = document.getElementById('filter-panel-content');
+            const icon = document.getElementById('filter-panel-icon');
+            if (el.style.display === 'none') { el.style.display = 'block'; icon.style.transform = 'rotate(0deg)'; }
+            else { el.style.display = 'none'; icon.style.transform = 'rotate(180deg)'; }
+        }
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector('.accordion-icon');
+            if (content.style.display === 'block') { content.style.display = 'none'; header.classList.remove('active'); }
+            else { content.style.display = 'block'; header.classList.add('active'); }
+        }
+
+        // --- Search ---
+        function executeSearch() {
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('results-area').classList.remove('hidden');
+            renderTable();
+        }
+
+        function sortTable(key) {
+            if (sortConfig.key === key) sortConfig.dir = sortConfig.dir === 'asc' ? 'desc' : 'asc';
+            else { sortConfig.key = key; sortConfig.dir = 'asc'; }
+
+            document.querySelectorAll('thead th i.sort-icon').forEach(i => i.className = 'fas fa-sort sort-icon');
+            const targetTh = document.querySelector(`th[onclick="sortTable('${key}')"] i`);
+            if (targetTh) targetTh.className = `fas fa-sort-${sortConfig.dir === 'asc' ? 'up' : 'down'} sort-icon text-blue-600`;
+
+            mockData.forEach(table => {
+                table.columns.sort((a, b) => {
+                    let valA = a[key] || '', valB = b[key] || '';
+                    if (key === 'status') {
+                        const w = r => !r.length ? 0 : (r[0].status === 'Profiling' ? 2 : 1);
+                        valA = w(a.rules); valB = w(b.rules);
+                    } else if (key === 'task') {
+                        valA = a.rules.length; valB = b.rules.length;
+                    } else if (key === 'ruleTime' || key === 'profileTime') {
+                        valA = a.rules.length ? a.rules[0][key] : ''; valB = b.rules.length ? b.rules[0][key] : '';
+                    }
+                    if (valA < valB) return sortConfig.dir === 'asc' ? -1 : 1;
+                    if (valA > valB) return sortConfig.dir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            mockData.forEach(table => {
+                const trH = document.createElement('tr');
+                trH.className = 'table-group-header';
+                trH.onclick = function () {
+                    this.classList.toggle('group-collapsed');
+                    let next = this.nextElementSibling;
+                    while (next && next.classList.contains('column-row')) {
+                        next.style.display = next.style.display === 'none' ? 'table-row' : 'none';
+                        next = next.nextElementSibling;
+                    }
+                };
+                // REQ: Removed Rows count
+                trH.innerHTML = `<td colspan="13" onclick="event.stopPropagation()"><div class="flex items-center"><input type="checkbox" class="mr-3 w-4 h-4 rounded text-blue-600" onchange="toggleTableSelect(this, '${table.id}')"> <i class="fas fa-chevron-down group-toggle-icon mr-2" onclick="this.closest('tr').click()"></i> [${table.domain}] ${table.name}</div></td>`;
+                tbody.appendChild(trH);
+
+                table.columns.forEach(col => {
+                    total++;
+                    let ruleHtml = '', baseHtml = '', critHtml = '', statHtml = '', scanHtml = '', taskHtml = '', rTimeHtml = '', pTimeHtml = '';
+
+                    if (col.rules.length > 0) {
+                        col.rules.forEach((r, idx) => {
+                            const cls = "h-12 flex items-center border-b border-gray-50 last:border-0 px-1";
+
+                            ruleHtml += `<div class="${cls} text-blue-600 hover:underline cursor-pointer truncate font-medium" onclick="showRuleDetails('${table.id}','${col.id}',${idx})">${r.name}</div>`;
+                            baseHtml += `<div class="${cls} font-mono text-gray-700 justify-center">${r.baseline || '-'}</div>`;
+
+                            if (r.status === 'Completed') {
+                                if (r.criteria) critHtml += `<div class="${cls} justify-between bg-blue-50 text-blue-800 font-bold px-1 text-xs rounded"><span>> ${r.criteria}</span><button onclick="openCriteria('${table.id}','${col.id}',${idx})" class="text-gray-400 hover:text-blue-600"><i class="fas fa-cog"></i></button></div>`;
+                                else critHtml += `<div class="${cls} justify-center"><button onclick="openCriteria('${table.id}','${col.id}',${idx})" class="text-xs bg-yellow-50 border border-yellow-300 text-yellow-700 px-1 py-0.5 rounded shadow-sm hover:bg-yellow-100">設定</button></div>`;
+                            } else { critHtml += `<div class="${cls} justify-center text-gray-300">-</div>`; }
+
+                            let badge = r.status === 'Profiling' ? '<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded flex items-center"><i class="fas fa-spinner fa-spin mr-1"></i>剖析中</span>' : (r.status === 'Completed' ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded flex items-center"><i class="fas fa-check-circle mr-1"></i>完成</span>' : '-');
+                            statHtml += `<div class="${cls} justify-center">${badge}</div>`;
+
+                            // REQ: Scan Count Display
+                            scanHtml += `<div class="${cls} text-xs text-gray-500 justify-end truncate" title="${r.scanInfo}">${r.status === 'Completed' ? r.scanInfo : '-'}</div>`;
+
+                            taskHtml += `<div class="${cls} text-xs text-purple-600 justify-center">Daily DQ</div>`;
+                            rTimeHtml += `<div class="${cls} text-xs text-gray-400 justify-center">${r.ruleTime ? r.ruleTime.split(' ')[1] : '-'}</div>`;
+                            pTimeHtml += `<div class="${cls} text-xs text-gray-400 justify-center">${r.profileTime && r.profileTime !== '-' ? r.profileTime.split(' ')[1] : '-'}</div>`;
+                        });
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'column-row bg-white border-b border-gray-100';
+                    tr.innerHTML = `
+                        <td class="text-center align-top pt-3"><input type="checkbox" class="col-check text-blue-600 rounded w-4 h-4" data-tid="${table.id}" value="${col.id}"></td>
+                        <td class="align-top pt-3 font-medium truncate" title="${col.name}">${col.name}</td>
+                        <td class="align-top pt-3 text-xs text-gray-500">${col.type}</td>
+                        <td class="align-top pt-3 text-xs">${col.class}</td>
+                        <td class="align-top pt-3 text-xs text-red-600">${col.sensitive}</td>
+                        <td class="p-0 border-l border-gray-100 align-top text-sm">${ruleHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 align-top text-sm">${baseHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 align-top text-sm">${critHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 border-l border-gray-100 align-top text-sm">${statHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 align-top text-sm">${scanHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 align-top text-sm">${taskHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 border-l border-gray-100 align-top text-sm">${rTimeHtml || '<div class="h-12"></div>'}</td>
+                        <td class="p-0 align-top text-sm">${pTimeHtml || '<div class="h-12"></div>'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+            document.getElementById('total-count').innerText = total;
+            document.getElementById('pag-total').innerText = total;
+            bindCheckboxEvents();
+        }
+
+        function toggleTableSelect(cb, tid) {
+            document.querySelectorAll(`.col-check[data-tid="${tid}"]`).forEach(c => c.checked = cb.checked);
+            updateBtnState();
+        }
+
+        function bindCheckboxEvents() {
+            document.querySelectorAll('.col-check').forEach(cb => {
+                cb.addEventListener('change', updateBtnState);
+            });
+            document.getElementById('check-all').addEventListener('change', (e) => {
+                document.querySelectorAll('.col-check').forEach(c => c.checked = e.target.checked);
+                document.querySelectorAll('.col-check')[0]?.dispatchEvent(new Event('change'));
+            });
+        }
+
+        function updateBtnState() {
+            const cnt = document.querySelectorAll('.col-check:checked').length;
+            document.getElementById('selected-count').innerText = cnt;
+            document.getElementById('btn-apply-rules').disabled = cnt === 0;
+        }
+
+        // --- Wizard Logic ---
+        function openWizard() { currentStep = 1; selectedRules = []; updateWizard(); renderRuleCards(); document.getElementById('wizard-modal').classList.add('open'); }
+        function closeWizard() { document.getElementById('wizard-modal').classList.remove('open'); }
+
+        function renderRuleCards() {
+            const c = document.getElementById('rules-list-container');
+            c.innerHTML = ruleDefs.map(r => `
+                <div class="rule-card bg-white border p-4 rounded mb-2" onclick="toggleRule(this, '${r.id}')">
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" class="mt-1 rule-check" value="${r.id}">
+                        <div class="flex-1">
+                            <div class="font-bold text-gray-800">${r.name}</div>
+                            <div class="text-sm text-gray-500 mb-3">${r.desc}</div>
+                            <div class="bg-gray-50 p-2 mt-2 rounded border hidden rule-params" onclick="event.stopPropagation()">${r.html}</div>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+        window.toggleRule = function (el) {
+            const cb = el.querySelector('.rule-check'); const p = el.querySelector('.rule-params');
+            cb.checked = !cb.checked;
+            if (cb.checked) { el.classList.add('selected'); p.classList.remove('hidden'); } else { el.classList.remove('selected'); p.classList.add('hidden'); }
+        }
+        window.testIndividualRule = function (e) { e.stopPropagation(); const btn = e.target; btn.innerHTML = 'Testing...'; setTimeout(() => { btn.innerHTML = '✔ 通過' }, 600); }
+
+        function updateWizard() {
+            document.getElementById('step-1').classList.toggle('hidden', currentStep !== 1);
+            document.getElementById('step-2').classList.toggle('hidden', currentStep !== 2);
+            document.getElementById('btn-wiz-prev').disabled = currentStep === 1;
+            const s1 = document.querySelector('[data-step="1"] .step-indicator'), s2 = document.querySelector('[data-step="2"] .step-indicator');
+            if (currentStep === 1) { s1.className = 'step-indicator bg-blue-600 text-white'; s2.className = 'step-indicator bg-gray-200 text-gray-500'; document.getElementById('btn-wiz-next').classList.remove('hidden'); document.getElementById('btn-wiz-run').classList.add('hidden'); }
+            else {
+                s1.className = 'step-indicator bg-green-500 text-white'; s2.className = 'step-indicator bg-blue-600 text-white'; document.getElementById('btn-wiz-next').classList.add('hidden'); document.getElementById('btn-wiz-run').classList.remove('hidden');
+                document.getElementById('summary-rule-count').innerText = selectedRules.length;
+                const ss = document.getElementById('w-scope'), si = document.getElementById('w-scope-val');
+                ss.onchange = () => { if (ss.value === 'full') si.classList.add('hidden'); else si.classList.remove('hidden'); }
+            }
+        }
+        document.getElementById('btn-wiz-next').onclick = () => {
+            const checks = document.querySelectorAll('.rule-check:checked');
+            if (checks.length === 0) return alert('請選擇規則');
+            selectedRules = Array.from(checks).map(c => ruleDefs.find(d => d.id === c.value));
+            currentStep = 2; updateWizard();
+        }
+        document.getElementById('btn-wiz-prev').onclick = () => { currentStep--; updateWizard(); }
+
+        document.getElementById('btn-wiz-run').onclick = () => {
+            const now = new Date().toLocaleString('zh-TW', { hour12: false });
+            const scope = document.getElementById('w-scope').value;
+            const scopeVal = document.getElementById('w-scope-val').value;
+
+            document.querySelectorAll('.col-check:checked').forEach(cb => {
+                const t = mockData.find(d => d.id === cb.dataset.tid);
+                const c = t.columns.find(x => x.id === cb.value);
+
+                // REQ: Scan Info Calculation
+                let scanInfoStr = '';
+                if (scope === 'full') {
+                    scanInfoStr = `${t.rowCount.toLocaleString()} (Full)`;
+                } else if (scope === 'percent') {
+                    const pct = parseInt(scopeVal) || 0;
+                    const cnt = Math.floor(t.rowCount * (pct / 100));
+                    scanInfoStr = `${cnt.toLocaleString()} (Sample ${pct}%)`;
+                } else {
+                    const cnt = parseInt(scopeVal) || 0;
+                    scanInfoStr = `${cnt.toLocaleString()} (Sample Rows)`;
+                }
+
+                selectedRules.forEach(r => {
+                    if (!c.rules.some(e => e.id === r.id)) {
+                        c.rules.push({ id: r.id, name: r.name, status: 'Profiling', scanInfo: scanInfoStr, ruleTime: now, profileTime: '-', baseline: null, criteria: null, tolerance: 0 });
+                        simulateProfiling(c, c.rules.length - 1);
+                    }
+                });
+            });
+            closeWizard(); renderTable();
+        }
+
+        function simulateProfiling(col, idx) {
+            setTimeout(() => {
+                const r = col.rules[idx];
+                if (r) {
+                    r.status = 'Completed';
+                    r.baseline = (Math.random() * 15 + 85).toFixed(2) + '%';
+                    r.profileTime = new Date().toLocaleString('zh-TW', { hour12: false });
+                    renderTable();
+                }
+            }, 3000);
+        }
+
+        // --- Criteria ---
+        function openCriteria(tid, cid, idx) {
+            editTarget = { tid, cid, idx };
+            const r = mockData.find(t => t.id === tid).columns.find(c => c.id === cid).rules[idx];
+            document.getElementById('crit-rule-name').innerText = r.name;
+            document.getElementById('crit-base').value = r.baseline;
+            document.getElementById('crit-tol').value = r.tolerance || 0;
+            calcCrit(r.baseline, r.tolerance || 0);
+            document.getElementById('criteria-modal').classList.add('open');
+        }
+        document.getElementById('crit-tol').oninput = (e) => calcCrit(document.getElementById('crit-base').value, e.target.value);
+        function calcCrit(b, t) { document.getElementById('crit-val').value = '> ' + (parseFloat(b) - parseFloat(t) || 0).toFixed(2) + '%'; }
+        function saveCriteria() {
+            const r = mockData.find(t => t.id === editTarget.tid).columns.find(c => c.id === editTarget.cid).rules[editTarget.idx];
+            r.tolerance = document.getElementById('crit-tol').value;
+            r.criteria = document.getElementById('crit-val').value;
+            document.getElementById('criteria-modal').classList.remove('open');
+            renderTable();
+        }
+
+        // --- Detail ---
+        window.showRuleDetails = function (tid, cid, idx) {
+            editTarget = { tid, cid, idx };
+            const r = mockData.find(t => t.id === tid).columns.find(c => c.id === cid).rules[idx];
+            document.getElementById('detail-title').innerText = r.name;
+            document.getElementById('view-mode-content').innerHTML = `<ul><li>Scope: ${r.scanInfo}</li><li>Baseline: ${r.baseline || '-'}</li></ul>`;
+            document.getElementById('view-mode-content').classList.remove('hidden');
+            document.getElementById('edit-mode-content').classList.add('hidden');
+            document.getElementById('badge-edit').classList.add('hidden');
+            document.getElementById('btn-close').classList.remove('hidden');
+            document.getElementById('btn-edit').classList.remove('hidden');
+            document.getElementById('btn-save').classList.add('hidden');
+            document.getElementById('btn-del').classList.add('hidden');
+            document.getElementById('detail-modal').classList.add('open');
+        }
+        function enableEdit() {
+            document.getElementById('view-mode-content').classList.add('hidden');
+            document.getElementById('edit-mode-content').classList.remove('hidden');
+            document.getElementById('badge-edit').classList.remove('hidden');
+            document.getElementById('btn-edit').classList.add('hidden');
+            document.getElementById('btn-del').classList.remove('hidden');
+            document.getElementById('btn-save').classList.remove('hidden');
+            const r = mockData.find(t => t.id === editTarget.tid).columns.find(c => c.id === editTarget.cid).rules[editTarget.idx];
+            const def = ruleDefs.find(d => d.id === r.id);
+            document.getElementById('edit-inputs').innerHTML = def ? def.html : 'Params...';
+        }
+        function saveEditAndRun() {
+            const now = new Date().toLocaleString('zh-TW', { hour12: false });
+            const col = mockData.find(t => t.id === editTarget.tid).columns.find(c => c.id === editTarget.cid);
+            const r = col.rules[editTarget.idx];
+            r.baseline = null; r.criteria = null; r.status = 'Profiling'; r.ruleTime = now; r.profileTime = '-';
+            simulateProfiling(col, editTarget.idx);
+            closeDetailModal(); renderTable();
+        }
+        function deleteRule() {
+            if (!confirm("移除?")) return;
+            const c = mockData.find(t => t.id === editTarget.tid).columns.find(c => c.id === editTarget.cid);
+            c.rules.splice(editTarget.idx, 1);
+            closeDetailModal(); renderTable();
+        }
+        function closeDetailModal() { document.getElementById('detail-modal').classList.remove('open'); }
+        function captureRuleParams() { return {}; }
+    </script>
+</body>
+
+</html>
